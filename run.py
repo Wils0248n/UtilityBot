@@ -40,6 +40,9 @@ async def on_message(message):
 	if message.content == '!clear':
 		await utilitybot.clear_channel(message.channel)
 
+	if message.content.startswith('!owo '):
+		await utilitybot.bot.send_message(message.channel, "OwO notcies your message: " + utilitybot.OwOify(message.content))
+
 	if message.content.startswith('!clear '):
 		await utilitybot.clear_channel_with_word(message.channel, message.content.split(' ')[1])
 
