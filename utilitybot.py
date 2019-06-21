@@ -1,4 +1,4 @@
-import random, asyncio, discord, re
+import random, asyncio, discord, re, time, sys
 from discord.ext import commands
 from discord.ext.commands import Bot
 
@@ -6,23 +6,6 @@ class UtilityBot():
 
 	def __init__(self):
 		self.bot = commands.Bot(command_prefix='!')
-
-	async def clear_channel(self, channel):
-		async for msg in self.bot.logs_from(channel):
-			try:
-				await self.bot.delete_message(msg)
-			except discord.errors.Forbidden:
-				await self.bot.send_message(channel, 'Missing Permissions')
-				break
-
-	async def clear_channel_with_word(self, channel, word):
-		async for msg in self.bot.logs_from(channel):
-			try:
-				if word in msg.content:
-					await self.bot.delete_message(msg)
-			except discord.errors.Forbidden:
-				await self.bot.send_message(channel, 'Missing Permissions')
-				break
 
 	def flip(self):
 		return random.choice(["Heads", "Tails"])
@@ -42,7 +25,7 @@ class UtilityBot():
 		text = re.sub(r'\!+', " " + random.choice(faces) + " ", text)
 		return text
 
-	async def get_embed_message(self):
+	def get_embed_message(self, dev):
 		embed_message = discord.Embed()
 		embed_message.title = 'Wilsøn\'s UtilityBot'
 		embed_message.color = 16496176
@@ -56,6 +39,61 @@ class UtilityBot():
 		embed_message.add_field(name='Source', value='https://github.com/Wils0248n/UtilityBot', inline=False)
 		embed_message.set_image(url='https://i.imgur.com/FQTjdml.png')
 		embed_message.set_thumbnail(url='https://i.imgur.com/dgLpgLc.png')
-		dev = await self.bot.get_user_info(259624839604731906)
 		embed_message.set_footer(text = 'Developer: ' + dev.name + "#" + dev.discriminator)
 		return embed_message
+
+utilitybot = UtilityBot()
+
+def main():
+		while True:
+			try:
+				utilitybot.bot.loop.run_until_complete(utilitybot.bot.start(sys.argv[1]))
+			except IndexError:
+				print("You must enter a bot token.\n")
+				print("Usage: python3 utilitybot.py <bot-token>")
+				sys.exit(1)
+			except discord.errors.LoginFailure:
+				print("Invalid bot token.\n")
+				sys.exit(1)
+			except KeyboardInterrupt:
+				print("\nExitting Gracefully")
+				utilitybot.bot.close()
+				sys.exit(0)
+
+@utilitybot.bot.event
+async def on_message(message):
+	if message.content == '!utilitybot':
+		dev = utilitybot.bot.get_user(259624839604731906)
+		await message.channel.send(embed=utilitybot.get_embed_message(dev))
+
+	if message.content == '!flip':
+		await message.channel.send("Coin Flipped: " + utilitybot.flip())
+
+	if message.content == '!roll':
+		await message.channel.send("Dice Rolled: " + utilitybot.roll())
+
+	if message.content == '!clear':
+		try:
+			await message.channel.purge()
+		except discord.errors.Forbidden:
+			await message.channel.send('Missing Permissions')
+
+	if message.content.startswith('!clear '):
+		try:
+			content = message.content.split(' ')[1]
+			await message.channel.purge(check=content)
+		except discord.errors.Forbidden:
+			await message.channel.send('Missing Permissions')
+
+	if message.content.startswith('!owo '):
+		await message.channel.send("OwO notcies your message: " + utilitybot.OwOify(message.content))
+
+
+
+@utilitybot.bot.event
+async def on_ready():
+	print(utilitybot.bot.user.name+ ' Ready!')
+	await utilitybot.bot.change_presence(activity=discord.Activity(game=discord.Game(name="Utilitybot | !utilitybot")))
+
+if __name__ == '__main__':
+	main()
